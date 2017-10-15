@@ -1,0 +1,366 @@
+setwd("D:/5th sem/Data Analytics/Ass4")
+cancer_2015 <- read.csv("cancer_2015.csv")
+
+names(cancer_2015)<-gsub("\\s","_",names(cancer_2015))
+# Question 1
+#1 mean of all values of that particular column :
+mod_cancer_means = cancer_2015
+means <- c()
+means <- c(means,colMeans(cancer_2015[5],na.rm = TRUE))
+means <- c(means,colMeans(cancer_2015[6],na.rm = TRUE))
+means <- c(means,colMeans(cancer_2015[7],na.rm = TRUE))
+means
+mod_cancer_means[,5][is.na(mod_cancer_means[,5])] <- means[1]
+mod_cancer_means[,6][is.na(mod_cancer_means[,6])] <- means[2]
+mod_cancer_means[,7][is.na(mod_cancer_means[,7])] <- means[3]
+View(mod_cancer_means)
+
+#2 linear interpolation (based on the nearest top and bottom values)
+# finding the missing values based on the line formed by top and bottom values.
+# march is 3 and august is 8 ...points are (3,__) and (8,__)
+# y = mx + c
+# m = y2-y1 / x2-x1
+# c = (x2.y1 - x1.y2) / (x2 - x1)
+# x1 = 3 and x2 = 8
+mod_cancer_linear_interpol <- cancer_2015
+slopes <- c()
+slopes <- c(slopes,(cancer_2015$Outpatients_TMH[8] - cancer_2015$Outpatients_TMH[3])/5)
+slopes <- c(slopes,(cancer_2015$New_Registrations_ACTREC[8] - cancer_2015$New_Registrations_ACTREC[3])/5)
+slopes <- c(slopes,(cancer_2015$Laboratory_Investigations_ACTREC[8] - cancer_2015$Laboratory_Investigations_ACTREC[3])/5)
+intercepts <- c()
+intercepts <- c(intercepts,(8*cancer_2015$Outpatients_TMH[3]-3*cancer_2015$Outpatients_TMH[8])/5)
+intercepts <- c(intercepts,(8*cancer_2015$New_Registrations_ACTREC[3]-3*cancer_2015$New_Registrations_ACTREC[8])/5)
+intercepts <- c(intercepts,(8*cancer_2015$Laboratory_Investigations_ACTREC[3]-3*cancer_2015$Laboratory_Investigations_ACTREC[8])/5)
+#now we have the 3 equns , just substitute
+for(i in c(4:7)){
+  mod_cancer_linear_interpol[i,5][is.na(mod_cancer_linear_interpol[i,5])] <- slopes[1]*i + intercepts[1]
+  mod_cancer_linear_interpol[i,6][is.na(mod_cancer_linear_interpol[i,6])] <- slopes[2]*i + intercepts[2]
+  mod_cancer_linear_interpol[i,7][is.na(mod_cancer_linear_interpol[i,7])] <- slopes[3]*i + intercepts[3]
+}
+View(mod_cancer_linear_interpol)
+
+#3 quadratic interpolation
+mod_cancer_quadratic <- cancer_2015
+#interpolation of a given data using a set by a polynomial given a set of points
+# y = an.x^n + an-1.x^n-1 + ..... a0 (for polynomial interpolation)
+# y = a2.x^2 + a1.x + a0 (for quadratic interpolation)
+# A X = B
+# points selected : most proximate 2 values from the past and 1 from the past
+# A = x1^2 x1 1 , X = a2 , B = y1 
+#     x2^2 x2 1       a1       y2
+#     x3^2 x3 1       a0       y3
+#points chosen for var1 :  x = 1,3,8 (i.e x1,x2,x3)
+A <- matrix(c(1,9,144,1,3,12,1,1,1),nrow = 3)
+B <- matrix(c(4227,4261,3825),nrow=3)
+X <- solve(A,B)
+a2 = X[1,1]
+a1 = X[2,1]
+a0 = X[3,1]
+for(i in c(4:7)){
+  mod_cancer_quadratic[i,5][is.na(mod_cancer_quadratic[i,5])] <- a2*(i^2)+a1*i+a0 
+}
+#points chosen for var2 :  x = 2,3,11 (i.e x1,x2,x3)
+A <- matrix(c(4,9,121,2,3,11,1,1,1),nrow = 3)
+B <- matrix(c(37,38,51),nrow=3)
+X <- solve(A,B)
+a2 = X[1,1]
+a1 = X[2,1]
+a0 = X[3,1]
+for(i in c(4:7)){
+  mod_cancer_quadratic[i,6][is.na(mod_cancer_quadratic[i,6])] <- a2*(i^2)+a1*i+a0 
+}
+#points chosen for var3 :  x = 1,3,11 (i.e x1,x2,x3)
+A <- matrix(c(1,9,121,1,3,11,1,1,1),nrow = 3)
+B <- matrix(c(7181,7612,7299),nrow=3)
+X <- solve(A,B)
+a2 = X[1,1]
+a1 = X[2,1]
+a0 = X[3,1]
+for(i in c(4:7)){
+  mod_cancer_quadratic[i,7][is.na(mod_cancer_quadratic[i,7])] <- a2*(i^2)+a1*i+a0 
+}
+View(mod_cancer_quadratic)
+
+#4
+# find correlation of each column wrt to the other. 
+#Pick the most correlated non NULLED column to predict the respective NA containing column.
+
+tmh <- tmh[!(is.na(tmh[5])) | !(is.na(tmh[6])) | !(is.na(tmh[7])),]
+tmh <- tmh[,c(2:13)]
+res <- cor(tmh)
+round(res, 2)
+
+library(zoo)
+tmh <- cancer_2015
+cancer <- cancer_2015
+
+tmh_col<- cancer_2015$Outpatients_TMH ~ cancer_2015$Laboratory_Investigations_TMC_Total
+tmh_model <- lm(tmh_col)
+predictoutpatient <- data.frame(predict(tmh_model, data.frame(cancer_2015)))
+
+for (i in 1:12)
+  if(is.na( cancer_2015$Outpatients_TMH[i]))
+    cancer_2015$Outpatients_TMH[i] = predictoutpatient[i,]
+
+ACTREC_col<- cancer_2015$New_Registrations_ACTREC ~ cancer_2015$No._of_surgeries_TMH
+ACTREC_model <- lm(ACTREC_col)
+predictACTRECcol <- data.frame(predict(ACTREC_model, data.frame(cancer_2015)))
+
+for (i in 1:12)
+  if(is.na( cancer_2015$New_Registrations_ACTREC[i]))
+    cancer_2015$New_Registrations_ACTREC[i] = predictACTRECcol[i,]
+
+lab_ACTREC_col<- cancer_2015$Laboratory_Investigations_ACTREC ~ cancer_2015$New_Registrations_TMH
+lab_ACTREC_model <- lm(lab_ACTREC_col)
+lab_predictACTRECcol <- data.frame(predict(lab_ACTREC_model, data.frame(cancer_2015)))
+
+for (i in 1:12)
+  if(is.na( cancer_2015$Laboratory_Investigations_ACTREC[i]))
+    cancer_2015$Laboratory_Investigations_ACTREC[i] = lab_predictACTRECcol[i,]
+
+
+#5
+#iterating mice function 5 times to get 5 set of vakues for each of missing value columns
+library(mice)
+
+try <- mice(cancer,m=5,maxit=50,meth='pmm')
+completedData1 <- complete(try,1)
+completedData2 <- complete(try,2)
+completedData3 <- complete(try,3)
+completedData4 <- complete(try,4)
+completedData5 <- complete(try,5)
+
+#Q1 part e plots
+#plot of OUTPATIENTS
+xaxis <- list(title = "MONTHS(2015)",
+              
+              showline = TRUE,
+              showgrid = FALSE,
+              showticklabels = TRUE,
+              linecolor = 'rgb(204, 204, 204)',
+              linewidth = 2,
+              autotick = TRUE,
+              ticks = 'outside',
+              tickcolor = 'rgb(204, 204, 204)',
+              tickwidth = 2,
+              ticklen = 5,
+              tickfont = list(family = 'Arial',
+                              size = 12,
+                              color = 'rgb(82, 82, 82)'))
+
+yaxis <- list(title = "Outpatients _ TMH",
+              
+              showgrid = FALSE,
+              zeroline = TRUE,
+              showline = FALSE,
+              showticklabels = TRUE)
+
+margin <- list(autoexpand = TRUE,
+               l = 100,
+               r = 100,
+               t = 110)
+
+tmh_df <- data.frame(cancer_2015$Month,mod_cancer_means$Outpatients_TMH,mod_cancer_linear_interpol$Outpatients_TMH,mod_cancer_quadratic$Outpatients_TMH,cancer_2015$Outpatients_TMH,completedData1$Outpatients_TMH,completedData2$Outpatients_TMH,completedData3$Outpatients_TMH,completedData4$Outpatients_TMH,completedData5$Outpatients_TMH)
+Month <- c(1,2,3,4,5,6,7,8,9,10,11,12)
+
+mice2<-tmh_df[2]
+mice3<-tmh_df[3]
+mice4<-tmh_df[4]
+mice5<-tmh_df[5]
+mice6<-tmh_df[6]
+mice7<-tmh_df[7]
+mice8<-tmh_df[8]
+mice9<-tmh_df[9]
+mice10<-tmh_df[10]
+
+q <- plot_ly() %>% 
+  add_data(mice10)%>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice10)), name = 'mice5',type='scatter', mode='lines') %>%
+  add_data(mice2) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice2)), name = 'mean', type='scatter', mode='lines') %>%
+  add_data(mice3) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice3)), name = 'linear interpolation', type='scatter', mode='lines') %>%
+  add_data(mice4) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice4)), name = 'quadratic', type='scatter', mode='lines') %>%
+  add_data(mice5) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice5)), name = 'linear regression', type='scatter', mode='lines') %>%
+  add_data(mice6) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice6)), name = 'mice1', type='scatter', mode='lines') %>%
+  add_data(mice7) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice7)), name = 'mice2', type='scatter', mode='lines') %>%
+  add_data(mice8) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice8)), name = 'mice3', type='scatter', mode='lines') %>%
+  add_data(mice9) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice9)), name = 'mice4', type='scatter', mode='lines') %>%
+  layout(title = "Filling missing values of Outpatients_TMH", xaxis = xaxis, yaxis = yaxis, margin = margin)
+
+#plot of NEW REGISTRATIONS ACTREC
+ACTREC_df <- data.frame(cancer_2015[1],mod_cancer_means$New_Registrations_ACTREC,mod_cancer_linear_interpol$New_Registrations_ACTREC,mod_cancer_quadratic$New_Registrations_ACTREC,cancer_2015$New_Registrations_ACTREC,completedData1$New_Registrations_ACTREC,completedData2$New_Registrations_ACTREC,completedData3$New_Registrations_ACTREC,completedData4$New_Registrations_ACTREC,completedData5$New_Registrations_ACTREC)
+
+yaxis <- list(title = "New Registrations ACTREC",
+              
+              showgrid = FALSE,
+              zeroline = TRUE,
+              showline = FALSE,
+              showticklabels = TRUE)
+
+mice2<-ACTREC_df[2]
+mice3<-ACTREC_df[3]
+mice4<-ACTREC_df[4]
+mice5<-ACTREC_df[5]
+mice6<-ACTREC_df[6]
+mice7<-ACTREC_df[7]
+mice8<-ACTREC_df[8]
+mice9<-ACTREC_df[9]
+mice10<-ACTREC_df[10]
+
+r <- plot_ly() %>% 
+  add_data(mice10)%>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice10)), name = 'mice5',type='scatter', mode='lines') %>%
+  add_data(mice2) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice2)), name = 'mean', type='scatter', mode='lines') %>%
+  add_data(mice3) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice3)), name = 'linear interpolation', type='scatter', mode='lines') %>%
+  add_data(mice4) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice4)), name = 'quadratic', type='scatter', mode='lines') %>%
+  add_data(mice5) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice5)), name = 'linear regression', type='scatter', mode='lines') %>%
+  add_data(mice6) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice6)), name = 'mice1', type='scatter', mode='lines') %>%
+  add_data(mice7) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice7)), name = 'mice2', type='scatter', mode='lines') %>%
+  add_data(mice8) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice8)), name = 'mice3', type='scatter', mode='lines') %>%
+  add_data(mice9) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice9)), name = 'mice4', type='scatter', mode='lines') %>%
+  layout(title = "Filling missing values of New Registration ACTREC", xaxis = xaxis, yaxis = yaxis, margin = margin)
+
+#plot of LABORATORY INVESTIGATIONS ACTREC
+
+lab_ACTREC_df <- data.frame(cancer_2015[1],mod_cancer_means$Laboratory_Investigations_ACTREC,mod_cancer_linear_interpol$Laboratory_Investigations_ACTREC,mod_cancer_quadratic$Laboratory_Investigations_ACTREC,cancer_2015$Laboratory_Investigations_ACTREC,completedData1$Laboratory_Investigations_ACTREC,completedData2$Laboratory_Investigations_ACTREC,completedData3$Laboratory_Investigations_ACTREC,completedData4$Laboratory_Investigations_ACTREC,completedData5$Laboratory_Investigations_ACTREC)
+
+yaxis <- list(title = "Laboratory Investigations ACTREC",
+              
+              showgrid = FALSE,
+              zeroline = TRUE,
+              showline = FALSE,
+              showticklabels = TRUE)
+
+
+mice2<-lab_ACTREC_df[2]
+mice3<-lab_ACTREC_df[3]
+mice4<-lab_ACTREC_df[4]
+mice5<-lab_ACTREC_df[5]
+mice6<-lab_ACTREC_df[6]
+mice7<-lab_ACTREC_df[7]
+mice8<-lab_ACTREC_df[8]
+mice9<-lab_ACTREC_df[9]
+mice10<-lab_ACTREC_df[10]
+
+s <- plot_ly() %>% 
+  add_data(mice10)%>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice10)), name = 'mice5',type='scatter', mode='lines') %>%
+  add_data(mice2) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice2)), name = 'mean', type='scatter', mode='lines') %>%
+  add_data(mice3) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice3)), name = 'linear interpolation', type='scatter', mode='lines') %>%
+  add_data(mice4) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice4)), name = 'quadratic', type='scatter', mode='lines') %>%
+  add_data(mice5) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice5)), name = 'linear regression', type='scatter', mode='lines') %>%
+  add_data(mice6) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice6)), name = 'mice1', type='scatter', mode='lines') %>%
+  add_data(mice7) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice7)), name = 'mice2', type='scatter', mode='lines') %>%
+  add_data(mice8) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice8)), name = 'mice3', type='scatter', mode='lines') %>%
+  add_data(mice9) %>% add_trace(x = ~Month,y = ~as.numeric(unlist(mice9)), name = 'mice4', type='scatter', mode='lines') %>%
+  layout(title = "Filling missing values of New Registration ACTREC", xaxis = xaxis, yaxis = yaxis, margin = margin)
+
+#Question 2
+
+#Question 2a
+library(dplyr)
+cancer<-read.csv('cancer_tailored.csv',sep=",")
+
+cancer<-na.omit(cancer)
+
+cancer_vis<-cancer %>% select(texture_mean,radius_mean,perimeter_mean,area_mean,area_se,area_worst,radius_worst,texture_worst,perimeter_worst)
+#since variances are too small in other attributes we eliminate them
+
+#Variances of all the features
+'''> var(cancer$id)
+[1] 1.578478e+16
+> var(cancer$radius_mean)
+[1] 12.38727
+> var(cancer$texture_mean)
+[1] 18.41927
+> var(cancer$perimeter_mean)
+[1] 589.1235
+> var(cancer$area_mean)
+[1] 123487.2
+> var(cancer$smoothness_mean)
+[1] 0.0001992446
+> var(cancer$compactness_mean)
+[1] 0.002811854
+> var(cancer$concavity_mean)
+[1] 0.006383414
+> var(cancer$concave.points_mean)
+[1] 0.001506857
+> var(cancer$symmetry_mean)
+[1] 0.0007579178
+> var(cancer$fractal_dimension_mean)
+[1] 5.020212e-05
+> var(cancer$radius_se)
+[1] 0.07712471
+> var(cancer$texture_se)
+[1] 0.302477
+> var(cancer$perimeter_se)
+[1] 4.104117
+> var(cancer$area_se)
+[1] 2078.02
+> var(cancer$smoothness_se)
+[1] 9.061865e-06
+> var(cancer$compactness_se)
+[1] 0.0003237663
+> var(cancer$concavity_se)
+[1] 0.0009186614
+> var(cancer$symmetry_se)
+[1] 6.892303e-05
+> var(cancer$fractal_dimension_se)
+[1] 7.064119e-06
+> var(cancer$radius_worst)
+[1] 23.40133
+> var(cancer$texture_worst)
+[1] 37.61829
+> var(cancer$perimeter_worst)
+[1] 1131.687
+> var(cancer$area_worst)
+[1] 324915.6
+> var(cancer$smoothness_worst)
+[1] 0.0005243442
+> var(cancer$compactness_worst)
+[1] 0.02492564
+> var(cancer$concavity_worst)
+[1] 0.04377942
+> var(cancer$concave.points_worst)
+[1] 0.004320222
+> var(cancer$symmetry_worst)
+[1] 0.003860361
+> var(cancer$fractal_dimension_worst)
+[1] 0.0003277588
+'''
+
+library(corrplot)
+M <- cor(cancer_vis)
+corrplot(M,method="circle",title='Cor-relation plot of attributes',order='AOE')
+#or
+#pairs(cancer_vis,main="Scatterplot matrix for the remaining attributes")
+
+
+#Question 2b
+
+
+
+library(caret)
+#install.packages('e1071', dependencies=TRUE)
+a<-confusionMatrix(cancer$predicted, cancer$diagnosis, positive = NULL, dnn = c("Prediction","Reference"))
+
+cancer["newclass"] <- ifelse(cancer["diagnosis"]=='B' & cancer["predicted"]=='B', "TN", 
+                             ifelse(cancer["diagnosis"]=='B' & cancer["predicted"]=='M', "FP",
+                                    ifelse(cancer["diagnosis"]=='M' & cancer["predicted"]=='B', "FN", "TP")))
+
+a_new <- table(cancer["newclass"])
+#Confusion Matrix is
+a_new
+
+
+
+#Question 2c
+#Accuracy:(a_new['TP']+a_new['TN'])/(a_new['TP']+a_new['FN']+a_new['TN']+a_new['FP'])
+cat("Overall accuracy:",a$overall['Accuracy'])
+cat("Misclassification rate:",(a_new['FP']+a_new['FN'])/(a_new['TP']+a_new['FN']+a_new['TN']+a_new['FP']))
+cat("Recall or Sensitivity:",
+recall<-a_new['TP']/(a_new['TP']+a_new['FN']))
+cat("Precision :",
+precision<-a_new['TP']/(a_new['TP']+a_new['FP']))
+cat("Specificity:",a_new['TN']/ (a_new['TN']+a_new['FP']) )
+cat('F score with beta=0.5:',(0.5*0.5 + 1)*precision*recall / (0.5*0.5*precision + recall))
+cat('F score with beta=2:',(2*2 + 1)*precision*recall / (2*2*precision + recall))
+
+
+
