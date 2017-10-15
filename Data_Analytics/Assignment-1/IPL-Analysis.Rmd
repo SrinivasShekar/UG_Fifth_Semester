@@ -1,0 +1,242 @@
+---
+title: "IPL Data Analysis"
+author: "Srinivas Shekar 01FB15ECS308"
+date: ' By 17 August 2017'
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Loading Data:
+
+```{r}
+data<-read.csv("deliveries.csv",sep=",")
+result1<-read.csv('matches.csv',sep=',')
+```
+
+Loading required libraries:
+```{r message=FALSE}
+library(magrittr)
+library(dplyr)
+library(ggplot2)
+library(gdata)
+
+```
+
+
+
+##Question 1:Analysis on IPL Final 2016
+
+
+1.Loading required data :
+
+```{r}
+d<-subset(data,match_id==577)
+data_srh<-subset(d,batting_team=='Sunrisers Hyderabad')
+data_rcb<-subset(d,batting_team=='Royal Challengers Bangalore')
+```
+
+2.Target set by SRH :
+
+```{r}
+s<-sum(data_srh$total_runs)
+print(s)
+```
+
+3."Beat the Run Rate Boys!!"- V Kohli
+
+```{r}
+run_rate<-s/max(data_srh$over)
+print(run_rate)
+```
+
+4.RCB's batting analyis :
+
+```{r}
+df_plot <-data_rcb %>% group_by(over)%>% summarise(runs=sum(total_runs)) %>% arrange(over)
+
+df_plot %>% ggplot(aes(over,runs))+geom_histogram(stat="identity",color='blue',fill='cyan')+xlab('Overs')+
+  ylab('Total runs scored')+ggtitle('Total runs scored by RCB in each over')
+```
+
+##Question 2:Analysis on team's batting performance
+
+1.Hungry for runs???Here is the total runs scored by teams in all seasons
+
+```{r}
+d_7<-subset(data,(match_id %in% c(7,27,67,171,414)) & is_super_over==0)
+d_7 %>%  group_by(inning,match_id,batting_team) %>% summarise(total_runs=sum(total_runs)) %>% arrange(match_id)
+```
+
+2.Record breakers!!
+
+```{r message=FALSE}
+
+result2<-subset(result1,(result %in% c('normal')) &(dl_applied==0))
+result2 <- rename.vars(result2, from = "id", to = "match_id")
+s1<-subset(data,match_id %in% result2$match_id)
+
+q<-s1 %>%  group_by(match_id,inning,batting_team) %>% summarise(total_runs=sum(total_runs)) %>% arrange(match_id)
+
+max_team<-subset(q,max(q$total_runs)==total_runs)
+max_team
+```
+
+3.Oops!! Record breakers or Record ....
+
+```{r}
+min_team<-subset(q,min(q$total_runs)==total_runs)
+min_team
+```
+
+##Question 3: IPL Auction:Who is the effective player??Lets look at marquee players
+
+```{r}
+getmode<-function(v){
+  uniqv<-unique(v)
+  uniqv[which.max(tabulate(match(v,uniqv)))]
+}
+```
+
+1.MS Dhoni's IPL career:
+
+```{r}
+msd<-subset(data,batsman=='MS Dhoni')
+msd<-msd %>% group_by(match_id,batsman) %>% summarise(total_runs=sum(total_runs)) %>% arrange(match_id)
+with(msd,sum(total_runs))
+with(msd,summary(total_runs))
+with(msd,getmode(total_runs))
+with(msd,IQR(total_runs))
+with(msd,sd(total_runs))
+```
+
+2.V Kohli's IPL career:
+
+```{r}
+kohli<-subset(data,batsman=='V Kohli')
+kohli<-kohli %>% group_by(match_id,batsman) %>% summarise(total_runs=sum(total_runs)) %>% arrange(match_id)
+with(kohli,summary(total_runs))
+with(kohli,sum(total_runs))
+with(kohli,getmode(total_runs))
+with(kohli,IQR(total_runs))
+with(kohli,sd(total_runs))
+```
+
+3.ABD Villiers's IPL career:
+
+```{r}
+abd<-subset(data,batsman=='AB de Villiers')
+abd<-abd %>% group_by(match_id,batsman) %>% summarise(total_runs=sum(total_runs)) %>% arrange(match_id)
+with(abd,summary(total_runs))
+with(abd,sum(total_runs))
+with(abd,getmode(total_runs))
+with(abd,IQR(total_runs))
+with(abd,sd(total_runs))
+```
+
+4.Jadeja's IPL career:
+
+```{r}
+jaddu<-subset(data,batsman=='RA Jadeja')
+jaddu<-jaddu %>% group_by(match_id,batsman) %>% summarise(total_runs=sum(total_runs)) %>% arrange(match_id)
+with(jaddu,summary(total_runs))
+with(jaddu,sum(total_runs))
+with(jaddu,getmode(total_runs))
+with(jaddu,IQR(total_runs))
+with(jaddu,sd(total_runs))
+```
+
+5.Suresh Raina's IPL career:
+
+```{r}
+raina<-subset(data,batsman=='SK Raina')
+raina<-raina %>% group_by(match_id,batsman) %>% summarise(total_runs=sum(total_runs)) %>% arrange(match_id)
+with(raina,summary(total_runs))
+with(raina,sum(total_runs))
+with(raina,getmode(total_runs))
+with(raina,IQR(total_runs))
+with(raina,sd(total_runs))
+```
+
+##Question 4: MSD v/s Kohli
+
+1.Comparitive Boxplots:
+```{r}
+
+
+boxplot(msd$total_runs , kohli$total_runs,col = terrain.colors(4))
+legend("topleft",title="Batsman",c("MS Dhoni","V Kohli"),fill=terrain.colors(4),horiz=TRUE)
+```
+
+2.90th Percentile
+
+```{r}
+quantile(msd$total_runs,prob=0.9)
+quantile(kohli$total_runs,prob=0.9)
+```
+
+3. (a) Top performances by Kohli
+
+```{r}
+
+kohli<-kohli %>% arrange(total_runs)
+tail(kohli)
+```
+
+(b) Top performances by MSD
+
+```{r}
+
+msd<-msd %>% arrange(total_runs)
+tail(msd)
+```
+
+4.(a) Worst performances by Kohli
+
+```{r}
+head(kohli,8)
+```
+
+(b) Worst performances by MSD
+```{r}
+head(msd,8)
+```
+
+##Question 5: Is Suresh Raina a key player in winning matches for Gujarat Lions?? 
+
+1.Loading Gujarat Lion's Data...
+
+```{r}
+gl<-subset(data,batting_team=='Gujarat Lions')
+gl<-gl %>% group_by(match_id) %>% summarise(total_runs=sum(total_runs)) %>% arrange(match_id)
+```
+
+2.Loading Raina's data...
+```{r}
+raina_gl<-subset(data,batting_team=='Gujarat Lions' & batsman=='SK Raina')
+raina_gl<-raina_gl %>% group_by(match_id) %>% summarise(total_runs=sum(total_runs)) %>% arrange(match_id)
+```
+
+3.Looking at Suresh Raina's impact in the win percentage of the team
+
+```{r}
+raina_vs_gl<-merge(raina_gl,gl,by='match_id')
+raina_vs_gl$impact<-round((raina_vs_gl[2]/raina_vs_gl[3])*100,2)
+raina_vs_gl
+
+
+
+win<-subset(result1,winner=="Gujarat Lions")
+win1<-subset(raina_vs_gl,match_id %in% win$id)
+
+colnames(win1)<-c("Match id","Raina's score","Team Score","Impact of Raina on the team")
+win1 
+
+
+```
+
