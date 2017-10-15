@@ -1,0 +1,328 @@
+#ANSWER
+# X -> AMERICAN AIRLINES
+# Y -> US AIRWAYS
+#Reasoning
+#to observe the sudden spike in Nuber of trips by American Airways in the month of July.
+# Also observe how US airways does not function as an independent carrier since July.
+#enough evidence to prove that US airways went through a merger with American Airlines.
+#to view embed version of my chart, please click on  https://plot.ly/~SwatiNH/1.embed
+#import plotly to plt line chart
+library(plotly)
+#import plyr to use count()
+require(plyr)
+
+library(readr)
+flights <- read_csv("D:/5th sem/Data Analytics/Ass3/flights.csv")
+View(flights)
+library(readr)
+airlines <- read_csv("D:/5th sem/Data Analytics/Ass3/airlines.csv")
+View(airlines)
+
+x <- c(1, 2, 3, 4, 5, 6, 7,8, 9, 10, 11, 12)
+AA <- subset(flights, AIRLINE == "AA", select=c(MONTH,AIRLINE))
+AA_count <- count(AA, AIRLINE ~ MONTH)
+AS <- subset(flights, AIRLINE == "AS", select=c(MONTH,AIRLINE))
+AS_count <- count(AS, AIRLINE ~ MONTH)
+B6 <- subset(flights, AIRLINE == "B6", select=c(MONTH,AIRLINE))
+B6_count <- count(B6, AIRLINE ~ MONTH)
+UA <- subset(flights, AIRLINE == "UA", select=c(MONTH,AIRLINE))
+UA_count <- count(UA, AIRLINE ~ MONTH)
+US <- subset(flights, AIRLINE == "US", select=c(MONTH,AIRLINE))
+US_count <- count(US, AIRLINE ~ MONTH)
+#there are no traces of US Airways after June. So the rest of the months have been filled with 0 frquency trips
+#evidence that US aiways went through a merger
+US_count <- rbind(US_count, "7"=c("US",7,0))
+US_count <- rbind(US_count, "8"=c("US",8,0))
+US_count <- rbind(US_count, "9"=c("US",9,0))
+US_count <- rbind(US_count, "10"=c("US",10,0))
+US_count <- rbind(US_count, "11"=c("US",11,0))
+US_count <- rbind(US_count, "12"=c("US",12,0))
+ 
+F9 <- subset(flights, AIRLINE == "F9", select=c(MONTH,AIRLINE))
+F9_count <- count(F9, AIRLINE ~ MONTH)
+OO <- subset(flights, AIRLINE == "OO", select=c(MONTH,AIRLINE))
+OO_count <- count(OO, AIRLINE ~ MONTH)
+NK <- subset(flights, AIRLINE == "NK", select=c(MONTH,AIRLINE))
+NK_count <- count(NK, AIRLINE ~ MONTH)
+WN <- subset(flights, AIRLINE == "WN", select=c(MONTH,AIRLINE))
+WN_count <- count(WN, AIRLINE ~ MONTH)
+DL <- subset(flights, AIRLINE == "DL", select=c(MONTH,AIRLINE))
+DL_count <- count(DL, AIRLINE ~ MONTH)
+EV <- subset(flights, AIRLINE == "EV", select=c(MONTH,AIRLINE))
+EV_count <- count(EV, AIRLINE ~ MONTH)
+HA <- subset(flights, AIRLINE == "HA", select=c(MONTH,AIRLINE))
+HA_count <- count(HA, AIRLINE ~ MONTH)
+MQ <- subset(flights, AIRLINE == "MQ", select=c(MONTH,AIRLINE))
+MQ_count <- count(MQ, AIRLINE ~ MONTH)
+VX <- subset(flights, AIRLINE == "VX", select=c(MONTH,AIRLINE))
+VX_count <- count(VX, AIRLINE ~ MONTH)
+
+data <- data.frame(x, UA_count$freq, AA_count$freq, US_count$freq, F9_count$freq, B6_count$freq, OO_count$freq, AS_count$freq, NK_count$freq, WN_count$freq, DL_count$freq, EV_count$freq, HA_count$freq, MQ_count$freq, VX_count$freq)
+
+xaxis <- list(title = "MONTHS(2015)",
+              showline = TRUE,
+              showgrid = FALSE,
+              showticklabels = TRUE,
+              linecolor = 'rgb(204, 204, 204)',
+              linewidth = 2,
+              autotick = true,
+              ticks = 'outside',
+              tickcolor = 'rgb(204, 204, 204)',
+              tickwidth = 2,
+              ticklen = 5,
+              tickfont = list(family = 'Arial',
+                              size = 12,
+                              color = 'rgb(82, 82, 82)'))
+
+yaxis <- list(title = "AIRLINES",
+              showgrid = FALSE,
+              zeroline = TRUE,
+              showline = FALSE,
+              showticklabels = TRUE)
+
+margin <- list(autoexpand = TRUE,
+               l = 100,
+               r = 100,
+               t = 110)
+
+# Build the annotations
+
+AA_1 <- list(
+  xref = 'paper',
+  yref = 'y',
+  x = 0.05,
+  y = AA_count$freq[1],
+  xanchor = 'right',
+  yanchor = 'middle',
+  text = ~paste('AA', AA_count$freq[1]),
+  font = list(family = 'Arial',
+              size = 16,
+              color = 'rgba(67,67,67,1)'),
+  showarrow = FALSE)
+
+US_1 <- list(
+  xref = 'paper',
+  yref = 'y',
+  x = 0.05,
+  y = US_count$freq[1],
+  xanchor = 'right',
+  yanchor = 'middle',
+  text = ~paste('US ', US_count$freq[1]),
+  font = list(family = 'Arial',
+              size = 16,
+              color = 'rgba(49,130,189, 1)'),
+  showarrow = FALSE)
+
+AA_2 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = AA_count$freq[7],
+  xanchor = 'right',
+  yanchor = 'middle',
+  text = paste('American Airways', AA_count$freq[7]),
+  font = list(family = 'Arial',
+              size = 16,
+              color = 'rgba(67,67,67,1)'),
+  showarrow = FALSE)
+
+US_2 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = US_count$freq[7],
+  xanchor = 'right',
+  yanchor = 'middle',
+  text = paste('US Airways ', US_count$freq[7]),
+  font = list(family = 'Arial',
+              size = 16,
+              color = 'rgba(0,0,0, 1)'),
+  showarrow = FALSE)
+
+UA_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = UA_count$freq[1],
+  xanchor = 'left',
+  yanchor = 'left',
+  text = paste('United Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+F9_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = F9_count$freq[1],
+  xanchor = 'left',
+  yanchor = 'right',
+  text = paste('Frontier Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+B6_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = B6_count$freq[1],
+  xanchor = 'right',
+  yanchor = 'middle',
+  text = paste('JetBlue Airways '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+OO_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = OO_count$freq[1],
+  xanchor = 'left',
+  yanchor = 'right',
+  text = paste('Skywest Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+AS_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = AS_count$freq[1],
+  xanchor = 'left',
+  yanchor = 'right',
+  text = paste('Alaska Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+NK_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = NK_count$freq[1],
+  xanchor = 'right',
+  yanchor = 'middle',
+  text = paste('Spirit Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+WN_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = WN_count$freq[1],
+  xanchor = 'middle',
+  yanchor = 'middle',
+  text = paste('SouthWest Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+DL_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = DL_count$freq[1],
+  xanchor = 'left',
+  yanchor = 'right',
+  text = paste('Delta Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+EV_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = EV_count$freq[1],
+  xanchor = 'right',
+  yanchor = 'middle',
+  text = paste('Atlantic Southeast Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+HA_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = HA_count$freq[1],
+  xanchor = 'right',
+  yanchor = 'middle',
+  text = paste('Hawaain Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+MQ_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = MQ_count$freq[1],
+  xanchor = 'right',
+  yanchor = 'right',
+  text = paste('American Eagle Airlines '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+VX_1 <- list(
+  xref = 'paper',
+  x = 0.95,
+  y = VX_count$freq[1],
+  xanchor = 'left',
+  yanchor = 'right',
+  text = paste('Virgin America '),
+  font = list(family = 'Arial',
+              size = 10,
+              color = 'rgba(0,0,255, 1)'),
+  showarrow = FALSE)
+
+
+p <- plot_ly(data, x = ~x) %>%
+  add_trace(y = ~AA_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(255,0,0,1)', width = 2))  %>%
+  add_trace(y = ~US_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(49,130,189, 1)', width = 2)) %>%
+  add_trace(y = ~UA_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~F9_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~B6_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~OO_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~AS_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~NK_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~WN_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~DL_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~EV_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~HA_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~MQ_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(y = ~VX_count$freq, type = 'scatter', mode = 'lines', line = list(color = 'rgba(0,255,0, 2)', width = 2)) %>%
+  add_trace(x = ~c(x[1], x[7]), y = ~c(AA_count$freq[1], AA_count$freq[7]), type = 'scatter', mode = 'markers', marker = list(color = 'rgba(67,67,67,1)', size = 8)) %>%
+  add_trace(x = ~c(x[1], x[7]), y = ~c(US_count$freq[1], US_count$freq[7]), type = 'scatter', mode = 'markers', marker = list(color = 'rgba(49,130,189, 1)', size = 8)) %>%
+  layout(title = "Airline Merger", xaxis = xaxis, yaxis = yaxis, margin = margin,
+         autosize = TRUE,
+         showlegend = FALSE,
+         annotations = AA_1) %>%
+  layout(annotations = US_1) %>%
+  layout(annotations = AA_2) %>%
+  layout(annotations = UA_1) %>%
+  layout(annotations = F9_1) %>%
+  layout(annotations = B6_1) %>%
+  layout(annotations = OO_1) %>%
+  layout(annotations = AS_1) %>%
+  layout(annotations = AA_1) %>%
+  layout(annotations = NK_1) %>%
+  layout(annotations = WN_1) %>%
+  layout(annotations = DL_1) %>%
+  layout(annotations = HA_1) %>%
+  layout(annotations = EV_1) %>%
+  layout(annotations = MQ_1) %>%
+  layout(annotations = VX_1) %>%
+  layout(annotations = US_2)
+
+# Created a shareable link to my chart
+# Set up API credentials: https://plot.ly/r/getting-started
+#chart_link = api_create(p, filename = "Assignment3Q2")
+#chart_link
+
+
